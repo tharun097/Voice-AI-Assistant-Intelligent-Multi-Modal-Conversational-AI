@@ -3,11 +3,11 @@ import os
 import uuid
 import streamlit as st
 import speech_recognition as sr
-from streamlit_mic_recorder import mic_recorder
-from groq import Groq
 from gtts import gTTS
 import tempfile
 from dotenv import load_dotenv
+from streamlit_mic_recorder import mic_recorder
+from groq import Groq
 
 from langchain_groq import ChatGroq
 from langchain_tavily import TavilySearch
@@ -29,6 +29,8 @@ load_dotenv()
 groq_client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
 )
+
+
 # -----------------------------
 # Embeddings & tools
 # -----------------------------
@@ -152,11 +154,21 @@ def initiate_chat(chat_id, user_input):
         tool_args = tool_call.get("args", {})
         if not isinstance(tool_args, dict):
             tool_args = {}
+
+        # 🔧 Normalize include_images to boolean
+        if "include_images" in tool_args:
+            val = tool_args["include_images"]
+            if isinstance(val, str):
+                tool_args["include_images"] = val.lower() == "true"
+            elif val is None:
+                tool_args["include_images"] = False
+
         try:
             result = tool_dict[tool_name].invoke(tool_args)
             tool_messages.append(ToolMessage(content=str(result), tool_call_id=tool_call["id"]))
         except Exception as e:
             tool_messages.append(ToolMessage(content=f"[Tool error: {e}]", tool_call_id=tool_call["id"]))
+
 
 
     final_response = chatbot.invoke([HumanMessage(content=user_input), response, *tool_messages],
