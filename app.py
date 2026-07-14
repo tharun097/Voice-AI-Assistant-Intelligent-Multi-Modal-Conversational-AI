@@ -273,42 +273,43 @@ st.divider()
 # Sidebar: Voice Input
 st.sidebar.header("🎤 Voice Input")
 
-audio = mic_recorder(
-    start_prompt="🎤 Speak",
-    stop_prompt="⏹ Stop Recording",
-    just_once=True,
-    use_container_width=True,
-    key="voice_input"
-)
+with st.sidebar:
+    audio = mic_recorder(
+        start_prompt="🎤 Speak",
+        stop_prompt="⏹ Stop Recording",
+        just_once=True,
+        use_container_width=True,
+        key="voice_input"
+    )
 
-if audio:
-
-    with st.spinner("Transcribing voice..."):
-        transcript = transcribe_live(
-            audio["bytes"],
-            selected_lang_code
-        )
-
-    if transcript:
-
-        add_message(chat_id, "user", transcript)
-
-        with st.chat_message("user"):
-            st.markdown(transcript)
-
-        special_reply = check_for_name_question(transcript)
-
-        if special_reply:
-            answer = special_reply
-        else:
-            answer = initiate_chat(chat_id, transcript)
-
-        add_message(chat_id, "assistant", answer)
-
-        with st.chat_message("assistant"):
-            st.markdown(answer)
-
-        speak_text(answer, selected_lang_code)
+    if audio:
+    
+        with st.spinner("Transcribing voice..."):
+            transcript = transcribe_live(
+                audio["bytes"],
+                selected_lang_code
+            )
+    
+        if transcript:
+    
+            add_message(chat_id, "user", transcript)
+    
+            with st.chat_message("user"):
+                st.markdown(transcript)
+    
+            special_reply = check_for_name_question(transcript)
+    
+            if special_reply:
+                answer = special_reply
+            else:
+                answer = initiate_chat(chat_id, transcript)
+    
+            add_message(chat_id, "assistant", answer)
+    
+            with st.chat_message("assistant"):
+                st.markdown(answer)
+    
+            speak_text(answer, selected_lang_code)
 
 st.divider()
 st.sidebar.header("📄 Upload Document")
