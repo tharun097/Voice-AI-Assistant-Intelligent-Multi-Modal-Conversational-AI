@@ -1,6 +1,5 @@
 streamlit
 SpeechRecognition
-pyaudio==0.2.14
 gTTS
 python-dotenv
 
@@ -10,3 +9,7 @@ langchain-groq
 langchain-tavily
 langchain-chroma
 langchain-huggingface
+
+chromadb
+sentence-transformers
+pypdf
