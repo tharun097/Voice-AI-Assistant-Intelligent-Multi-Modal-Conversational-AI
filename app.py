@@ -319,57 +319,63 @@ if uploaded_file and st.sidebar.button("Index Document"):
     st.sidebar.success(f"Indexed {uploaded_file.name} as tool {tool_name}")
 
 
-col1, col2 = st.columns([1, 8])
+# -----------------------------
+# Voice Recorder
+# -----------------------------
+st.divider()
+st.markdown("### 🎤 Voice Input")
 
-with col1:
-    audio = mic_recorder(
-        start_prompt="🎤",
-        stop_prompt="⏹",
-        just_once=True,
-        key="voice_input"
-    )
+audio = mic_recorder(
+    start_prompt="🎤 Speak",
+    stop_prompt="⏹ Stop Recording",
+    just_once=True,
+    use_container_width=True,
+    key="voice_input"
+)
 
-    if audio:
-        with st.spinner("Transcribing..."):
-            transcript = transcribe_live(
-                audio["bytes"],
-                selected_lang_code
-            )
-        if transcript:
-            add_message(chat_id, "user", transcript)
-        
-            with st.chat_message("user"):
-                st.markdown(transcript)
-        
-            special_reply = check_for_name_question(transcript)
-        
-            if special_reply:
-                answer = special_reply
-            else:
-                answer = initiate_chat(chat_id, transcript)
-        
-            add_message(chat_id, "assistant", answer)
-        
-            with st.chat_message("assistant"):
-                st.markdown(answer)
-        
-            speak_text(answer, selected_lang_code)
+if audio:
 
-with col2:
-    prompt = st.chat_input("Type your message")
+    with st.spinner("Transcribing voice..."):
+        transcript = transcribe_live(
+            audio["bytes"],
+            selected_lang_code
+        )
 
-    if prompt:
-        add_message(chat_id, "user", prompt)
+    if transcript:
+
+        add_message(chat_id, "user", transcript)
+
         with st.chat_message("user"):
-            st.markdown(prompt)
-    
-        special_reply = check_for_name_question(prompt)
+            st.markdown(transcript)
+
+        special_reply = check_for_name_question(transcript)
+
         if special_reply:
             answer = special_reply
         else:
-            answer = initiate_chat(chat_id, prompt)
-    
+            answer = initiate_chat(chat_id, transcript)
+
         add_message(chat_id, "assistant", answer)
+
         with st.chat_message("assistant"):
             st.markdown(answer)
+
         speak_text(answer, selected_lang_code)
+st.divider()
+prompt = st.chat_input("Type your message")
+
+if prompt:
+    add_message(chat_id, "user", prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    special_reply = check_for_name_question(prompt)
+    if special_reply:
+        answer = special_reply
+    else:
+        answer = initiate_chat(chat_id, prompt)
+
+    add_message(chat_id, "assistant", answer)
+    with st.chat_message("assistant"):
+        st.markdown(answer)
+    speak_text(answer, selected_lang_code)
