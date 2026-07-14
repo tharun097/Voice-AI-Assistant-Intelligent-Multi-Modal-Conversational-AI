@@ -150,23 +150,6 @@ SpeechRecognition     │       PDF/TXT Loader
 
 ------------------------------------------------------------------------
 
-# ⚙ Technology Stack
-
-  Category               Technology
-  ---------------------- -------------------------
-  LLM                    Groq Llama-4 Scout
-  Framework              LangChain
-  RAG                    ChromaDB
-  Embeddings             all-MiniLM-L6-v2
-  Search                 Tavily Search
-  UI                     Streamlit
-  Voice                  SpeechRecognition, gTTS
-  Vector Database        Chroma
-  Document Loader        PyPDFLoader
-  Programming Language   Python
-
-------------------------------------------------------------------------
-
 # 💡 Skills Demonstrated
 
 -   Agentic AI
