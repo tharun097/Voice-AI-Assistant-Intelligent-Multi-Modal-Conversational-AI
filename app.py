@@ -2,7 +2,6 @@
 import os
 import uuid
 import streamlit as st
-from streamlit_mic_recorder import mic_recorder
 import speech_recognition as sr
 from gtts import gTTS
 import tempfile
@@ -168,18 +167,50 @@ def speak_text(text, selected_lang_code):
 
 # SpeechRecognition helper
 def transcribe_live(selected_lang_code):
+    import os
+
+    # Streamlit Cloud doesn't support server microphone
+    if os.getenv("STREAMLIT_SERVER_HEADLESS") == "true":
+        st.sidebar.error(
+            "🎤 Live microphone is not supported on Streamlit Cloud.\n"
+            "Please run locally or use a browser microphone component."
+        )
+        return None
+
     r = sr.Recognizer()
-    with sr.Microphone() as source:
-        placeholder = st.sidebar.empty()
-        placeholder.info("🎙️ Speak now...")
-        audio = r.listen(source, timeout=10, phrase_time_limit=30)
-        placeholder.empty()
+
     try:
+        with sr.Microphone() as source:
+            placeholder = st.sidebar.empty()
+            placeholder.info("🎙️ Speak now...")
+
+            r.adjust_for_ambient_noise(source, duration=1)
+
+            audio = r.listen(
+                source,
+                timeout=10,
+                phrase_time_limit=30
+            )
+
+            placeholder.empty()
+
         return r.recognize_google(audio, language=selected_lang_code)
+
+    except AttributeError:
+        st.sidebar.error("PyAudio is not installed.")
+        return None
+
+    except sr.WaitTimeoutError:
+        st.sidebar.warning("No speech detected.")
+        return None
+
     except sr.UnknownValueError:
-        return "[Could not understand audio]"
+        st.sidebar.warning("Could not understand audio.")
+        return None
+
     except sr.RequestError as e:
-        return f"[API error: {e}]"
+        st.sidebar.error(f"Speech API Error: {e}")
+        return None
 
 
 # Name check helper
@@ -264,22 +295,32 @@ selected_lang_name = st.sidebar.selectbox(
 selected_lang_code = LANGUAGES[selected_lang_name]
 
 st.sidebar.header("🎤 Voice Input")
+if st.sidebar.button("Speak"):
 
-audio = mic_recorder(
-    start_prompt="🎤 Start Recording",
-    stop_prompt="⏹ Stop Recording",
-    just_once=True,
-    use_container_width=True,
-)
+    # Disable microphone on Streamlit Cloud
+    if os.getenv("STREAMLIT_SERVER_HEADLESS") == "true":
+        st.sidebar.warning(
+            "🎤 Voice recording is not available on Streamlit Cloud.\n"
+            "Please run the app locally or use a browser microphone."
+        )
+        st.stop()
 
-if audio is not None:
+    transcript = transcribe_live(selected_lang_code)
+    if transcript:
+        add_message(chat_id, "user", transcript)
+        with st.chat_message("user"):
+            st.markdown(transcript)
 
-    audio_bytes = audio["bytes"]
+        special_reply = check_for_name_question(transcript)
+        if special_reply:
+            answer = special_reply
+        else:
+            answer = initiate_chat(chat_id, transcript)
 
-    with open("voice.wav", "wb") as f:
-        f.write(audio_bytes)
-
-    st.success("Voice recorded successfully.")
+        add_message(chat_id, "assistant", answer)
+        with st.chat_message("assistant"):
+            st.markdown(answer)
+        speak_text(answer, selected_lang_code)
 
 st.sidebar.header("📄 Upload Document")
 uploaded_file = st.sidebar.file_uploader("Upload PDF/TXT", type=["pdf", "txt"])
