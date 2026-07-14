@@ -3,6 +3,8 @@ import os
 import uuid
 import streamlit as st
 import speech_recognition as sr
+from streamlit_mic_recorder import mic_recorder
+from groq import Groq
 from gtts import gTTS
 import tempfile
 from dotenv import load_dotenv
@@ -24,6 +26,9 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 # -----------------------------
 load_dotenv()
 
+groq_client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
 # -----------------------------
 # Embeddings & tools
 # -----------------------------
@@ -166,51 +171,22 @@ def speak_text(text, selected_lang_code):
     st.audio(tmp.name, format="audio/mp3")
 
 # SpeechRecognition helper
-def transcribe_live(selected_lang_code):
-    import os
+def transcribe_live(audio_bytes, language="en"):
 
-    # Streamlit Cloud doesn't support server microphone
-    if os.getenv("STREAMLIT_SERVER_HEADLESS") == "true":
-        st.sidebar.error(
-            "🎤 Live microphone is not supported on Streamlit Cloud.\n"
-            "Please run locally or use a browser microphone component."
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+        f.write(audio_bytes)
+        audio_path = f.name
+
+    with open(audio_path, "rb") as audio_file:
+
+        transcription = groq_client.audio.transcriptions.create(
+            file=audio_file,
+            model="whisper-large-v3",
+            response_format="verbose_json",
+            language=language
         )
-        return None
 
-    r = sr.Recognizer()
-
-    try:
-        with sr.Microphone() as source:
-            placeholder = st.sidebar.empty()
-            placeholder.info("🎙️ Speak now...")
-
-            r.adjust_for_ambient_noise(source, duration=1)
-
-            audio = r.listen(
-                source,
-                timeout=10,
-                phrase_time_limit=30
-            )
-
-            placeholder.empty()
-
-        return r.recognize_google(audio, language=selected_lang_code)
-
-    except AttributeError:
-        st.sidebar.error("PyAudio is not installed.")
-        return None
-
-    except sr.WaitTimeoutError:
-        st.sidebar.warning("No speech detected.")
-        return None
-
-    except sr.UnknownValueError:
-        st.sidebar.warning("Could not understand audio.")
-        return None
-
-    except sr.RequestError as e:
-        st.sidebar.error(f"Speech API Error: {e}")
-        return None
+    return transcription.text
 
 
 # Name check helper
@@ -295,32 +271,39 @@ selected_lang_name = st.sidebar.selectbox(
 selected_lang_code = LANGUAGES[selected_lang_name]
 
 st.sidebar.header("🎤 Voice Input")
-if st.sidebar.button("Speak"):
 
-    # Disable microphone on Streamlit Cloud
-    if os.getenv("STREAMLIT_SERVER_HEADLESS") == "true":
-        st.sidebar.warning(
-            "🎤 Voice recording is not available on Streamlit Cloud.\n"
-            "Please run the app locally or use a browser microphone."
-        )
-        st.stop()
+audio = mic_recorder(
+    start_prompt="🎤 Speak",
+    stop_prompt="⏹ Stop",
+    just_once=True,
+    use_container_width=True,
+)
 
-    transcript = transcribe_live(selected_lang_code)
-    if transcript:
-        add_message(chat_id, "user", transcript)
-        with st.chat_message("user"):
-            st.markdown(transcript)
+if audio:
 
-        special_reply = check_for_name_question(transcript)
-        if special_reply:
-            answer = special_reply
-        else:
-            answer = initiate_chat(chat_id, transcript)
+    transcript = transcribe_live(
+        audio["bytes"],
+        selected_lang_code
+    )
 
-        add_message(chat_id, "assistant", answer)
-        with st.chat_message("assistant"):
-            st.markdown(answer)
-        speak_text(answer, selected_lang_code)
+    add_message(chat_id, "user", transcript)
+
+    with st.chat_message("user"):
+        st.markdown(transcript)
+
+    special_reply = check_for_name_question(transcript)
+
+    if special_reply:
+        answer = special_reply
+    else:
+        answer = initiate_chat(chat_id, transcript)
+
+    add_message(chat_id, "assistant", answer)
+
+    with st.chat_message("assistant"):
+        st.markdown(answer)
+
+    speak_text(answer, selected_lang_code)
 
 st.sidebar.header("📄 Upload Document")
 uploaded_file = st.sidebar.file_uploader("Upload PDF/TXT", type=["pdf", "txt"])
