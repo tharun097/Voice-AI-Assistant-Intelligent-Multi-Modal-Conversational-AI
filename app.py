@@ -272,38 +272,44 @@ selected_lang_code = LANGUAGES[selected_lang_name]
 
 st.sidebar.header("🎤 Voice Input")
 
+st.sidebar.write("Click below to record your voice.")
+
 audio = mic_recorder(
     start_prompt="🎤 Speak",
-    stop_prompt="⏹ Stop",
+    stop_prompt="⏹ Stop Recording",
     just_once=True,
     use_container_width=True,
+    key="voice_input"
 )
 
 if audio:
 
-    transcript = transcribe_live(
-        audio["bytes"],
-        selected_lang_code
-    )
+    with st.spinner("Transcribing..."):
+        transcript = transcribe_live(
+            audio["bytes"],
+            selected_lang_code
+        )
 
-    add_message(chat_id, "user", transcript)
+    if transcript:
 
-    with st.chat_message("user"):
-        st.markdown(transcript)
+        add_message(chat_id, "user", transcript)
 
-    special_reply = check_for_name_question(transcript)
+        with st.chat_message("user"):
+            st.markdown(transcript)
 
-    if special_reply:
-        answer = special_reply
-    else:
-        answer = initiate_chat(chat_id, transcript)
+        special_reply = check_for_name_question(transcript)
 
-    add_message(chat_id, "assistant", answer)
+        if special_reply:
+            answer = special_reply
+        else:
+            answer = initiate_chat(chat_id, transcript)
 
-    with st.chat_message("assistant"):
-        st.markdown(answer)
+        add_message(chat_id, "assistant", answer)
 
-    speak_text(answer, selected_lang_code)
+        with st.chat_message("assistant"):
+            st.markdown(answer)
+
+        speak_text(answer, selected_lang_code)
 
 st.sidebar.header("📄 Upload Document")
 uploaded_file = st.sidebar.file_uploader("Upload PDF/TXT", type=["pdf", "txt"])
