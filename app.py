@@ -330,29 +330,30 @@ with col1:
     )
 
     if audio:
-    transcript = transcribe_live(
-        audio["bytes"],
-        selected_lang_code
-    )
-
-    add_message(chat_id, "user", transcript)
-
-    with st.chat_message("user"):
-        st.markdown(transcript)
-
-    special_reply = check_for_name_question(transcript)
-
-    if special_reply:
-        answer = special_reply
-    else:
-        answer = initiate_chat(chat_id, transcript)
-
-    add_message(chat_id, "assistant", answer)
-
-    with st.chat_message("assistant"):
-        st.markdown(answer)
-
-    speak_text(answer, selected_lang_code)
+        with st.spinner("Transcribing..."):
+            transcript = transcribe_live(
+                audio["bytes"],
+                selected_lang_code
+            )
+        if transcript:
+            add_message(chat_id, "user", transcript)
+        
+            with st.chat_message("user"):
+                st.markdown(transcript)
+        
+            special_reply = check_for_name_question(transcript)
+        
+            if special_reply:
+                answer = special_reply
+            else:
+                answer = initiate_chat(chat_id, transcript)
+        
+            add_message(chat_id, "assistant", answer)
+        
+            with st.chat_message("assistant"):
+                st.markdown(answer)
+        
+            speak_text(answer, selected_lang_code)
 
 with col2:
     prompt = st.chat_input("Type your message")
