@@ -270,46 +270,46 @@ selected_lang_name = st.sidebar.selectbox(
 )
 selected_lang_code = LANGUAGES[selected_lang_name]
 
-st.sidebar.header("🎤 Voice Input")
+# st.sidebar.header("🎤 Voice Input")
 
-st.sidebar.write("Click below to record your voice.")
+# st.sidebar.write("Click below to record your voice.")
 
-audio = mic_recorder(
-    start_prompt="🎤 Speak",
-    stop_prompt="⏹ Stop Recording",
-    just_once=True,
-    use_container_width=True,
-    key="voice_input"
-)
+# audio = mic_recorder(
+#     start_prompt="🎤 Speak",
+#     stop_prompt="⏹ Stop Recording",
+#     just_once=True,
+#     use_container_width=True,
+#     key="voice_input"
+# )
 
-if audio:
+# if audio:
 
-    with st.spinner("Transcribing..."):
-        transcript = transcribe_live(
-            audio["bytes"],
-            selected_lang_code
-        )
+#     with st.spinner("Transcribing..."):
+#         transcript = transcribe_live(
+#             audio["bytes"],
+#             selected_lang_code
+#         )
 
-    if transcript:
+#     if transcript:
 
-        add_message(chat_id, "user", transcript)
+#         add_message(chat_id, "user", transcript)
 
-        with st.chat_message("user"):
-            st.markdown(transcript)
+#         with st.chat_message("user"):
+#             st.markdown(transcript)
 
-        special_reply = check_for_name_question(transcript)
+#         special_reply = check_for_name_question(transcript)
 
-        if special_reply:
-            answer = special_reply
-        else:
-            answer = initiate_chat(chat_id, transcript)
+#         if special_reply:
+#             answer = special_reply
+#         else:
+#             answer = initiate_chat(chat_id, transcript)
 
-        add_message(chat_id, "assistant", answer)
+#         add_message(chat_id, "assistant", answer)
 
-        with st.chat_message("assistant"):
-            st.markdown(answer)
+#         with st.chat_message("assistant"):
+#             st.markdown(answer)
 
-        speak_text(answer, selected_lang_code)
+#         speak_text(answer, selected_lang_code)
 
 st.sidebar.header("📄 Upload Document")
 uploaded_file = st.sidebar.file_uploader("Upload PDF/TXT", type=["pdf", "txt"])
@@ -318,7 +318,43 @@ if uploaded_file and st.sidebar.button("Index Document"):
     tool_name = index_uploaded_document(chat_id, uploaded_file)
     st.sidebar.success(f"Indexed {uploaded_file.name} as tool {tool_name}")
 
-# Text input
+# ---------------- Voice Input ----------------
+
+audio = mic_recorder(
+    start_prompt="🎤 Speak",
+    stop_prompt="⏹ Stop",
+    just_once=True,
+    use_container_width=True,
+    key="voice_input"
+)
+
+if audio:
+    transcript = transcribe_live(
+        audio["bytes"],
+        selected_lang_code
+    )
+
+    add_message(chat_id, "user", transcript)
+
+    with st.chat_message("user"):
+        st.markdown(transcript)
+
+    special_reply = check_for_name_question(transcript)
+
+    if special_reply:
+        answer = special_reply
+    else:
+        answer = initiate_chat(chat_id, transcript)
+
+    add_message(chat_id, "assistant", answer)
+
+    with st.chat_message("assistant"):
+        st.markdown(answer)
+
+    speak_text(answer, selected_lang_code)
+
+# ---------------- Text Input ----------------
+
 prompt = st.chat_input("Type your message")
 if prompt:
     add_message(chat_id, "user", prompt)
