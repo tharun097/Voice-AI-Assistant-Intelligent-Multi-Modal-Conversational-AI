@@ -2,6 +2,7 @@
 import os
 import uuid
 import streamlit as st
+from streamlit_mic_recorder import mic_recorder
 import speech_recognition as sr
 from gtts import gTTS
 import tempfile
@@ -263,23 +264,22 @@ selected_lang_name = st.sidebar.selectbox(
 selected_lang_code = LANGUAGES[selected_lang_name]
 
 st.sidebar.header("🎤 Voice Input")
-if st.sidebar.button("Speak"):
-    transcript = transcribe_live(selected_lang_code)
-    if transcript:
-        add_message(chat_id, "user", transcript)
-        with st.chat_message("user"):
-            st.markdown(transcript)
 
-        special_reply = check_for_name_question(transcript)
-        if special_reply:
-            answer = special_reply
-        else:
-            answer = initiate_chat(chat_id, transcript)
+audio = mic_recorder(
+    start_prompt="🎤 Start Recording",
+    stop_prompt="⏹ Stop Recording",
+    just_once=True,
+    use_container_width=True,
+)
 
-        add_message(chat_id, "assistant", answer)
-        with st.chat_message("assistant"):
-            st.markdown(answer)
-        speak_text(answer, selected_lang_code)
+if audio is not None:
+
+    audio_bytes = audio["bytes"]
+
+    with open("voice.wav", "wb") as f:
+        f.write(audio_bytes)
+
+    st.success("Voice recorded successfully.")
 
 st.sidebar.header("📄 Upload Document")
 uploaded_file = st.sidebar.file_uploader("Upload PDF/TXT", type=["pdf", "txt"])
