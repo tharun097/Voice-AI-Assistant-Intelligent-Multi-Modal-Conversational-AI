@@ -1,6 +1,6 @@
 streamlit
 SpeechRecognition
-pyaudio
+pyaudio==0.2.14
 gTTS
 python-dotenv
 
