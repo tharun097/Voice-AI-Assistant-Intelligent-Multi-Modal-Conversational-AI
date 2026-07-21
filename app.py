@@ -51,7 +51,7 @@ tool_dict = {t.name: t for t in base_tools}
 # -----------------------------
 if "llm" not in st.session_state:
     st.session_state.llm = ChatGroq(
-        model="qwen/qwen3.6-27b",
+        model="openai/gpt-oss-120b",
         api_key=os.getenv("GROQ_API_KEY"),
         streaming=True,
     )
