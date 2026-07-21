@@ -51,7 +51,7 @@ tool_dict = {t.name: t for t in base_tools}
 # -----------------------------
 if "llm" not in st.session_state:
     st.session_state.llm = ChatGroq(
-        model="groq/compound",
+        model="groq/compound-mini",
         api_key=os.getenv("GROQ_API_KEY"),
         streaming=True,
     )
